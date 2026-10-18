@@ -9,12 +9,15 @@
  *
  */
 
+#include <cstdio>
+#include <filesystem>
+#include <iomanip>
+#include <print>
+#include <regex>
+
 #include "Logger.hh"
 
-#include <iomanip>
-#include <iostream>
-#include <filesystem>
-#include <regex>
+namespace fs= std::filesystem;
 
 // Static cache for function name extraction
 
@@ -45,8 +48,6 @@ std::string Logger::ExtractFuncName(const char *pFunc)
 
 std::string Logger::ExtractFuncName(std::string_view funcName)
 {
-    // std::cout << funcName << '\n';
-    // return {};
     static std::unordered_map<std::string_view, std::string> s_FuncNameCache;
 
     {
@@ -67,11 +68,6 @@ std::string Logger::ExtractFuncName(std::string_view funcName)
         std::scoped_lock lock(CacheLck_);
         s_FuncNameCache.emplace(funcName, res);
     }
-
-    // std::cout << "Cache size:" << s_FuncNameCache.size() << '\n';
-    // for(auto &[k, v]: s_FuncNameCache) {
-    //     std::cout << k << " -> " << v << '\n';
-    // }
 
     return res;
 }
@@ -132,7 +128,7 @@ void Logger::openLogFile()
     std::string filename= "logs/" + Timestamp_ + ".log";
     LogFile_.open(filename, std::ios::out | std::ios::app);
     if(!LogFile_.is_open()) {
-        std::cerr << "Unable to open log file: " << filename << "\n";
+        std::println(stderr, "Unable to open log file: {}", filename);
     }
 }
 
@@ -149,9 +145,13 @@ void Logger::logInfoOutput(LogLevel lv, std::string &msg)
         msg.insert(closePos + 1, resetColor); //! insert reset color first
         msg.insert(openPos, color);
 
-        std::cout << msg << '\n';
+        if(LogLevel::E == lv || LogLevel::F == lv) {
+            std::println(stderr, "{}", msg);
+        } else {
+            std::println("{}", msg);
+        }
     } catch(const std::exception &e) {
-        std::cerr << "Log output error: " << e.what() << '\n';
+        std::println(stderr, "Log output error: {}", e.what());
     }
 }
 

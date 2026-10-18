@@ -23,6 +23,7 @@ check_ipo_supported(RESULT _ipo_supported)
 if(_ipo_supported)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         add_compile_options(-flto=full)
+        add_link_options(-flto=full -fuse-ld=lld)
     else()
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
     endif()
@@ -37,9 +38,13 @@ add_compile_options(
     -fdata-sections
     -funroll-loops
     -fomit-frame-pointer
-    "$<$<CONFIG:Debug>:-ggdb3;-DDEBUG>"
-    $<$<CONFIG:Release,MinSizeRel>:-DNDEBUG>
+    "$<$<CONFIG:Debug>:-O0;-ggdb3;-DDEBUG_>"
+    $<$<CONFIG:Release,MinSizeRel>:-DNDEBUG_>
 )
+
+# Independent of DEBUG / NDEBUG / the parent project's DEBUG_.
+option(enableLogger "Compile Logger calls and output" ON)
+add_compile_definitions(LOGGER_ENABLED_=$<BOOL:${enableLogger}>)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_|amd|AMD)64$")
     add_compile_options(
@@ -70,9 +75,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_link_libraries(${PROJECT_NAME}_test PRIVATE
     $<$<CONFIG:Debug>:Logger>
 )
-target_sources(${PROJECT_NAME} PUBLIC
-    Logger.hh
+target_sources(${PROJECT_NAME} PRIVATE
     Logger.cc
+)
+target_sources(${PROJECT_NAME} PUBLIC
+    FILE_SET HEADERS
+    FILES Logger.hh
 )
 
 # SetupCodeChecks(${PROJECT_NAME})

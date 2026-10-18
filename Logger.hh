@@ -2,9 +2,9 @@
 
 #include <fstream>
 #include <mutex>
+#include <sstream>
 #include <string_view>
 #include <unordered_map>
-#include <sstream>
 #if __has_include(<format>)
     #include <format>
     #define LOGGER_HAS_FMT true
@@ -12,13 +12,10 @@
     #define LOGGER_HAS_FMT false
 #endif
 
-#if defined(DEBUG) && !defined(NODEBUG)
-    #define LOGGER_ENABLED true
-#else
-    #define LOGGER_ENABLED false
+// Set by Logger's CMake option. Not tied to DEBUG or NDEBUG.
+#ifndef LOGGER_ENABLED_
+    #define LOGGER_ENABLED_ true
 #endif
-
-namespace fs= std::filesystem;
 
 class Logger final {
 public:
@@ -56,7 +53,7 @@ private:
     std::mutex MsgLck_, CacheLck_;
     LogLevel LogLv_ { A };
     bool EnableLogFile_ { false };
-    static constexpr bool G_IS_LOGGER_ENABLED= LOGGER_ENABLED;
+    static constexpr bool G_IS_LOGGER_ENABLED= LOGGER_ENABLED_;
 
 public:
     Logger(const Logger &)            = delete;
